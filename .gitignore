@@ -1,0 +1,14 @@
+# 忽略.Backup目录及其所有内容
+.Backup/
+
+# 忽略常见的临时文件和编译产物
+*.exe
+*.zip
+*.tmp
+*.log
+
+# 忽略Test Tools目录（可选）
+# Test Tools/
+
+# 忽略Release目录（可选）
+# Release/
