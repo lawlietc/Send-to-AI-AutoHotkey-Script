@@ -42,7 +42,7 @@ AppName=ZAI
 ProcessName=msedge.exe  ; 进程名，用于精确识别应用
 
 [MenuSettings]
-MenuCount=3      ; 自定义菜单项数量
+MenuCount=4      ; 自定义菜单项数量
 
 [MenuItem1]
 Name=翻译成英文
@@ -123,6 +123,7 @@ ProcessName=msedge.exe  ; 精确的进程名
 
 - 当`SelectApp`为空或未设置时，使用当前配置（`CurrentConfig`指定的配置）
 - 当`SelectApp`设置为数字时（如"1"、"2"等），使用对应编号的配置
+- 当`SelectApp`设置为多个数字（如"8,5"）时，按顺序发送到多个应用配置
 - 这使得您可以为不同的AI应用创建专门的菜单项，无需频繁切换当前配置
 
 #### 配置示例
@@ -167,6 +168,13 @@ Content=请翻译以下内容：{text}
 NewChat=0
 SendEnter=1
 SelectApp=3  ; 使用Config3的配置
+
+[MenuItem4]
+Name=新对话，发送
+Content=
+NewChat=1
+SendEnter=1
+SelectApp=8,5  ; 按顺序发送到Config8和Config5的配置
 ```
 
 ### 使用方法
