@@ -1,14 +1,23 @@
-# 忽略.Backup目录及其所有内容
-.Backup/
+# AutoHotkey Script Git Ignore
 
-# 忽略常见的临时文件和编译产物
-*.exe
-*.zip
-*.tmp
+# IDE 配置和缓存
+.trae/
+Vscode/
+
+# 文档和参考资料
+Document/
+Reference/
+
+# 发布和资源文件
+Release/
+Resource/
+
+# 测试工具
+Test Tools/
+
+# 其他常见的忽略项
 *.log
-
-# 忽略Test Tools目录（可选）
-# Test Tools/
-
-# 忽略Release目录（可选）
-# Release/
+*.tmp
+*.bak
+Thumbs.db
+.DS_Store

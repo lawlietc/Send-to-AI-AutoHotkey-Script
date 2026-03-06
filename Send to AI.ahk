@@ -4,12 +4,14 @@
 
 #SingleInstance Force
 
-; 全局变量声明 - 在AHK v2中，全局变量需要在函数中声明为global
+; 全局变量声明 - 在 AHK v2 中，全局变量需要在函数中声明为 global
 ConfigFile := A_ScriptDir . "\Config.ini"
-ConfigFileUTF8 := A_ScriptDir . "\Test Tools\Config_UTF8.ini"  ; UTF-8 BOM版本的配置文件
+ConfigFileUTF8 := A_ScriptDir . "\Test Tools\Config_UTF8.ini"  ; UTF-8 BOM 版本的配置文件
 CurrentConfigID := 1
 CurrentAppName := ""
 CurrentProcessName := ""
+CurrentShortcutKey := ""
+CurrentShortcutDelay := ""
 
 ; 菜单配置全局变量
 MenuCount := 0
@@ -54,8 +56,10 @@ LoadMenuConfig()  ; 加载菜单配置
     Sleep(100) ; 短暂延迟确保切换完成
     
     ; 执行快捷键操作
-    Send("^k") ; 按下 Ctrl+K
-    Sleep(100) ; 短暂延迟确保操作完成
+    Send(GetShortcutKeyCombo(CurrentShortcutKey))
+    ; 使用自定义延迟或默认值 100ms
+    delayValue := (CurrentShortcutDelay != "" && IsInteger(CurrentShortcutDelay)) ? Integer(CurrentShortcutDelay) : 100
+    Sleep(delayValue)
     Send("!1") ; 按下 Alt+1
     Sleep(100) ; 短暂延迟确保操作完成
     Send("^v") ; 按下 Ctrl+V 粘贴内容
@@ -76,7 +80,23 @@ StrJoin(arr, delimiter)
     return result
 }
 
-; 从SelectApp字符串中获取所有APP的名称
+; 获取快捷键组合
+GetShortcutKeyCombo(shortcutKey := "")
+{
+    ; 如果为空或无效，返回默认值 ^k
+    if (shortcutKey = "" || shortcutKey = "1") {
+        return "^k"
+    } else if (shortcutKey = "2") {
+        return "^t"
+    } else if (shortcutKey = "3") {
+        return "^n"
+    } else {
+        ; 无效值返回默认值
+        return "^k"
+    }
+}
+
+; 从 SelectApp 字符串中获取所有 APP 的名称
 GetAppNamesFromSelectApp(selectAppString)
 {
     ; 声明全局变量
@@ -136,7 +156,7 @@ GetAppNamesFromSelectApp(selectAppString)
 }
 
 ; 处理单个应用的操作
-ProcessSingleApp(appName, processName, newChat, sendEnter)
+ProcessSingleApp(appName, processName, newChat, sendEnter, shortcutKey := "", shortcutDelay := "")
 {
     ; 使用新的窗口查找逻辑
     windowID := FindMatchingWindow(appName, processName)
@@ -162,8 +182,10 @@ ProcessSingleApp(appName, processName, newChat, sendEnter)
     
     ; 根据配置执行不同的操作
     if (newChat) {
-        Send("^k") ; 按下 Ctrl+K
-        Sleep(100) ; 短暂延迟确保操作完成
+        Send(GetShortcutKeyCombo(shortcutKey))
+        ; 使用自定义延迟或默认值 100ms
+        delayValue := (shortcutDelay != "" && IsInteger(shortcutDelay)) ? Integer(shortcutDelay) : 100
+        Sleep(delayValue)
     }
     
     Send("!1") ; 按下 Alt+1
@@ -222,12 +244,12 @@ ProcessMultipleApps(selectAppString, newChat, sendEnter)
         appConfig := GetAppConfig(appIndex)
         
         if (appConfig.AppName != "") {
-            ; 处理当前APP
-            ProcessSingleApp(appConfig.AppName, appConfig.ProcessName, newChat, sendEnter)
+            ; 处理当前 APP
+            ProcessSingleApp(appConfig.AppName, appConfig.ProcessName, newChat, sendEnter, appConfig.ShortcutKey, appConfig.ShortcutDelay)
             
-            ; 如果不是最后一个APP，添加延迟
+            ; 如果不是最后一个 APP，添加延迟
             if (index < appIndices.Length) {
-                Sleep(500) ; 在切换到下一个APP前添加延迟
+                Sleep(500) ; 在切换到下一个 APP 前添加延迟
             }
         } else {
             MsgBox("警告: 找不到SelectApp指定的配置 " . appIndex . "，将跳过此配置。", "配置警告", 0x30)
@@ -235,65 +257,95 @@ ProcessMultipleApps(selectAppString, newChat, sendEnter)
     }
 }
 
-; 获取指定APP编号的配置
+; 获取指定 APP 编号的配置
 GetAppConfig(appIndex)
 {
     ; 声明全局变量
     global ConfigFile
     
     ; 初始化返回对象
-    appConfig := {AppName: "", ProcessName: ""}
+    appConfig := {AppName: "", ProcessName: "", ShortcutKey: "", ShortcutDelay: ""}
     
     ; 读取指定配置的应用信息
     sectionName := "Config" . appIndex
     
-    ; 使用三级读取机制：UTF-8编码 → 默认编码 → IniRead
+    ; 使用三级读取机制：UTF-8 编码 → 默认编码 → IniRead
     try {
-        ; 尝试使用UTF-8编码读取
+        ; 尝试使用 UTF-8 编码读取
         fileContent := FileRead(ConfigFile, "UTF-8")
         
-        ; 使用正则表达式匹配AppName和ProcessName
+        ; 使用正则表达式匹配 AppName、ProcessName、ShortcutKey 和 ShortcutDelay
         appNamePattern := "s)\[" . sectionName . "\][\s\S]*?AppName=([^\r\n]*)"
         processNamePattern := "s)\[" . sectionName . "\][\s\S]*?ProcessName=([^\r\n]*)"
+        shortcutKeyPattern := "s)\[" . sectionName . "\][\s\S]*?ShortcutKey=([^\r\n]*)"
+        shortcutDelayPattern := "s)\[" . sectionName . "\][\s\S]*?ShortcutDelay=([^\r\n]*)"
         
-        ; 匹配AppName
+        ; 匹配 AppName
         match := ""
         if RegExMatch(fileContent, appNamePattern, &match) {
             appConfig.AppName := Trim(match[1])
         }
         
-        ; 匹配ProcessName
+        ; 匹配 ProcessName
         match := ""
         if RegExMatch(fileContent, processNamePattern, &match) {
             appConfig.ProcessName := Trim(match[1])
         }
         
-        ; 如果UTF-8编码读取失败，尝试默认编码
+        ; 匹配 ShortcutKey
+        match := ""
+        if RegExMatch(fileContent, shortcutKeyPattern, &match) {
+            appConfig.ShortcutKey := Trim(match[1])
+        }
+        
+        ; 匹配 ShortcutDelay
+        match := ""
+        if RegExMatch(fileContent, shortcutDelayPattern, &match) {
+            appConfig.ShortcutDelay := Trim(match[1])
+        }
+        
+        ; 如果 UTF-8 编码读取失败，尝试默认编码
         if (appConfig.AppName = "") {
             fileContent := FileRead(ConfigFile)
             
-            ; 匹配AppName
+            ; 匹配 AppName
             match := ""
             if RegExMatch(fileContent, appNamePattern, &match) {
                 appConfig.AppName := Trim(match[1])
             }
             
-            ; 匹配ProcessName
+            ; 匹配 ProcessName
             match := ""
             if RegExMatch(fileContent, processNamePattern, &match) {
                 appConfig.ProcessName := Trim(match[1])
             }
+            
+            ; 匹配 ShortcutKey
+            match := ""
+            if RegExMatch(fileContent, shortcutKeyPattern, &match) {
+                appConfig.ShortcutKey := Trim(match[1])
+            }
+            
+            ; 匹配 ShortcutDelay
+            match := ""
+            if RegExMatch(fileContent, shortcutDelayPattern, &match) {
+                appConfig.ShortcutDelay := Trim(match[1])
+            }
         }
         
-        ; 如果仍然失败，回退到IniRead方法
+        ; 如果仍然失败，回退到 IniRead 方法
         if (appConfig.AppName = "") {
             appConfig.AppName := IniRead(ConfigFile, sectionName, "AppName", "")
             appConfig.ProcessName := IniRead(ConfigFile, sectionName, "ProcessName", "")
+            appConfig.ShortcutKey := IniRead(ConfigFile, sectionName, "ShortcutKey", "")
+            appConfig.ShortcutDelay := IniRead(ConfigFile, sectionName, "ShortcutDelay", "")
         }
     } catch {
-        ; 如果出现异常，直接使用IniRead方法
+        ; 如果出现异常，直接使用 IniRead 方法
         appConfig.AppName := IniRead(ConfigFile, sectionName, "AppName", "")
         appConfig.ProcessName := IniRead(ConfigFile, sectionName, "ProcessName", "")
+        appConfig.ShortcutKey := IniRead(ConfigFile, sectionName, "ShortcutKey", "")
+        appConfig.ShortcutDelay := IniRead(ConfigFile, sectionName, "ShortcutDelay", "")
     }
     
     return appConfig
@@ -418,8 +470,10 @@ SendToAI(mode)
     
     ; 根据模式执行不同的操作
     if (mode = "full") {
-        Send("^k") ; 按下 Ctrl+K
-        Sleep(100) ; 短暂延迟确保操作完成
+        Send(GetShortcutKeyCombo(CurrentShortcutKey))
+        ; 使用自定义延迟或默认值 100ms
+        delayValue := (CurrentShortcutDelay != "" && IsInteger(CurrentShortcutDelay)) ? Integer(CurrentShortcutDelay) : 100
+        Sleep(delayValue)
     }
     
     Send("!1") ; 按下 Alt+1
@@ -433,7 +487,7 @@ SendToAI(mode)
 LoadCurrentConfig(showMessage := false)
 {
     ; 声明全局变量
-    global ConfigFile, CurrentConfigID, CurrentAppName, CurrentProcessName
+    global ConfigFile, CurrentConfigID, CurrentAppName, CurrentProcessName, CurrentShortcutKey, CurrentShortcutDelay
     
     ; 检查配置文件是否存在
     if !FileExist(ConfigFile) {
@@ -459,10 +513,20 @@ LoadCurrentConfig(showMessage := false)
         RegExMatch(fileContent, appNamePattern, &appNameMatch)
         CurrentAppName := appNameMatch[1] ? appNameMatch[1] : "豆包"
         
-        ; 获取ProcessName
+        ; 获取 ProcessName
         processNamePattern := "s)\[" . sectionName . "\][\s\S]*?ProcessName=([^\r\n]*)"
         RegExMatch(fileContent, processNamePattern, &processNameMatch)
         CurrentProcessName := processNameMatch[1] ? processNameMatch[1] : ""
+        
+        ; 获取 ShortcutKey
+        shortcutKeyPattern := "s)\[" . sectionName . "\][\s\S]*?ShortcutKey=([^\r\n]*)"
+        RegExMatch(fileContent, shortcutKeyPattern, &shortcutKeyMatch)
+        CurrentShortcutKey := shortcutKeyMatch[1] ? shortcutKeyMatch[1] : ""
+        
+        ; 获取 ShortcutDelay
+        shortcutDelayPattern := "s)\[" . sectionName . "\][\s\S]*?ShortcutDelay=([^\r\n]*)"
+        RegExMatch(fileContent, shortcutDelayPattern, &shortcutDelayMatch)
+        CurrentShortcutDelay := shortcutDelayMatch[1] ? shortcutDelayMatch[1] : ""
         
         ; 如果正则匹配失败，尝试使用默认编码
         if (CurrentAppName = "" || CurrentAppName = "豆包" && InStr(fileContent, "AppName=豆包") = 0) {
@@ -477,27 +541,37 @@ LoadCurrentConfig(showMessage := false)
             CurrentAppName := appNameMatch[1] ? appNameMatch[1] : "豆包"
             RegExMatch(fileContent, processNamePattern, &processNameMatch)
             CurrentProcessName := processNameMatch[1] ? processNameMatch[1] : ""
+            RegExMatch(fileContent, shortcutKeyPattern, &shortcutKeyMatch)
+            CurrentShortcutKey := shortcutKeyMatch[1] ? shortcutKeyMatch[1] : ""
+            RegExMatch(fileContent, shortcutDelayPattern, &shortcutDelayMatch)
+            CurrentShortcutDelay := shortcutDelayMatch[1] ? shortcutDelayMatch[1] : ""
         }
         
-        ; 如果仍然失败，回退到IniRead
+        ; 如果仍然失败，回退到 IniRead
         if (CurrentAppName = "") {
             CurrentConfigID := IniRead(ConfigFile, "Settings", "CurrentConfig", "1")
             sectionName := "Config" . CurrentConfigID
             CurrentAppName := IniRead(ConfigFile, sectionName, "AppName", "豆包")
             CurrentProcessName := IniRead(ConfigFile, sectionName, "ProcessName", "")
+            CurrentShortcutKey := IniRead(ConfigFile, sectionName, "ShortcutKey", "")
+            CurrentShortcutDelay := IniRead(ConfigFile, sectionName, "ShortcutDelay", "")
         }
     } catch {
-        ; 如果FileRead失败，回退到IniRead
+        ; 如果 FileRead 失败，回退到 IniRead
         CurrentConfigID := IniRead(ConfigFile, "Settings", "CurrentConfig", "1")
         sectionName := "Config" . CurrentConfigID
         CurrentAppName := IniRead(ConfigFile, sectionName, "AppName", "豆包")
         CurrentProcessName := IniRead(ConfigFile, sectionName, "ProcessName", "")
+        CurrentShortcutKey := IniRead(ConfigFile, sectionName, "ShortcutKey", "")
+        CurrentShortcutDelay := IniRead(ConfigFile, sectionName, "ShortcutDelay", "")
     }
     
     ; 根据参数决定是否显示调试信息
     if (showMessage) {
-        processInfo := CurrentProcessName ? "进程名: " . CurrentProcessName : "进程名: (未配置)"
-        MsgBox("配置加载完成:`n`n配置文件: " . ConfigFile . "`n配置ID: " . CurrentConfigID . "`n应用名称: " . CurrentAppName . "`n" . processInfo, "配置加载", 0x40)
+        processInfo := CurrentProcessName ? "进程名： " . CurrentProcessName : "进程名： (未配置)"
+        shortcutInfo := CurrentShortcutKey ? "快捷键配置： " . CurrentShortcutKey : "快捷键配置： (未配置，使用默认 Ctrl+K)"
+        delayInfo := CurrentShortcutDelay ? "快捷键延迟： " . CurrentShortcutDelay . "ms" : "快捷键延迟： (未配置，使用默认 100ms)"
+        MsgBox("配置加载完成:`n`n 配置文件： " . ConfigFile . "`n 配置 ID: " . CurrentConfigID . "`n 应用名称： " . CurrentAppName . "`n" . processInfo . "`n" . shortcutInfo . "`n" . delayInfo, "配置加载", 0x40)
     }
 }
 
@@ -782,13 +856,13 @@ ExecuteMenuItem(itemIndex)
     }
     Sleep(100) ; 增加延迟确保复制完成
     
-    ; 检查菜单项是否指定了SelectApp
+    ; 检查菜单项是否指定了 SelectApp
     if (menuItem.SelectApp != "") {
-        ; 处理多个APP的情况
+        ; 处理多个 APP 的情况
         ProcessMultipleApps(menuItem.SelectApp, menuItem.NewChat, menuItem.SendEnter)
     } else {
         ; 使用当前配置的应用
-        ProcessSingleApp(CurrentAppName, CurrentProcessName, menuItem.NewChat, menuItem.SendEnter)
+        ProcessSingleApp(CurrentAppName, CurrentProcessName, menuItem.NewChat, menuItem.SendEnter, CurrentShortcutKey, CurrentShortcutDelay)
     }
 }
 
