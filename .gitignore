@@ -3,6 +3,8 @@
 # IDE 配置和缓存
 .trae/
 Vscode/
+.qoder
+.vscode
 
 # 文档和参考资料
 Document/
@@ -10,7 +12,6 @@ Reference/
 
 # 发布和资源文件
 Release/
-Resource/
 
 # 测试工具
 Test Tools/
@@ -21,3 +22,4 @@ Test Tools/
 *.bak
 Thumbs.db
 .DS_Store
+.Backup
