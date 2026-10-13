@@ -4,27 +4,25 @@
 
 ## 功能特点
 
-1. **多配置支持**：支持配置多个 AI 应用，如豆包、ZAI 等
+1. **多配置支持**：支持配置多个 AI 应用，如Deepseek、GPT、ZAI 等
 2. **精确应用识别**：支持通过窗口标题和进程名精确识别应用，解决同名应用问题
 3. **配置切换**：通过快捷键或菜单快速切换不同配置
 4. **灵活操作**：提供完整流程和简化流程两种操作模式
 5. **自定义菜单**：支持创建自定义菜单项，实现文本预处理和不同操作流程
 6. **窗口信息获取**：提供 Win+F11 快捷键获取当前活动窗口的详细信息，便于配置应用识别规则
 7. **菜单项指定应用**：通过 SelectApp 字段为每个菜单项指定特定应用配置，无需频繁切换当前配置
-8. **自定义快捷键**：支持为每个应用配置不同的快捷键（Ctrl+K/Ctrl+T/Ctrl+N）
+8. **自定义快捷键**：支持为每个应用配置不同的快捷键（Ctrl+K/Ctrl+T/Ctrl+N/Ctrl+J）
 9. **自定义延迟**：支持为每个应用配置快捷键按下后的延迟时间，适配不同应用的响应速度
 
 ## 快捷键说明
 
-- **Win+F1**：完整流程 - 复制选中内容 → 激活当前配置的应用 → 快捷键（Ctrl+K/Ctrl+T/Ctrl+N，可配置）→ 定位输入框 → 粘贴 → 回车
+- **Win+F1**：完整流程 - 复制选中内容 → 激活当前配置的应用 → 快捷键（Ctrl+K/Ctrl+T/Ctrl+N/Ctrl+J，可配置）→ 定位输入框 → 粘贴 → 回车
 - **Win+F2**：显示自定义菜单 - 选择菜单项执行对应的文本处理流程
 - **Win+F3**：简化流程 - 复制选中内容 → 激活当前配置的应用 → 定位输入框 → 粘贴 → 回车
 - **Win+F10**：重新加载配置文件
 - **Win+F11**：获取窗口信息 - 显示当前活动窗口的标题、进程名、窗口类名和窗口 ID，用于精确配置应用识别规则
 
-## 额外说明
-- 定位输入框：模拟按下 Alt+1，定位到网页的第一个输入框，需另外安装脚本实现
-- [聚焦第一个文本输入框](https://greasyfork.org/zh-CN/scripts/504564)
+# 
 
 ## 配置文件说明
 
@@ -36,14 +34,14 @@ CurrentConfig=1  ; 当前使用的配置 ID
 ConfigCount=2    ; 总配置数量
 
 [Config1]
-AppName=豆包
-ProcessName=msedge.exe  ; 进程名，用于精确识别应用
-ShortcutKey=1           ; 快捷键配置（1=Ctrl+K, 2=Ctrl+T, 3=Ctrl+N，默认为 1）
+AppName=Deepseek
+ProcessName=chrome.exe  ; 进程名，用于精确识别应用
+ShortcutKey=1           ; 快捷键配置（1=Ctrl+K, 2=Ctrl+T, 3=Ctrl+N, 4=Ctrl+J，默认为 1）
 ShortcutDelay=100       ; 快捷键延迟时间（单位：毫秒，默认为 100）
 
 [Config2]
 AppName=ZAI
-ProcessName=msedge.exe  ; 进程名，用于精确识别应用
+ProcessName=chrome.exe  ; 进程名，用于精确识别应用
 ShortcutKey=1
 ShortcutDelay=100
 
@@ -67,6 +65,7 @@ SendEnter=1      ; 是否发送回车 (1=是，0=否)
   - `1` = Ctrl+K（默认）
   - `2` = Ctrl+T
   - `3` = Ctrl+N
+  - `4` = Ctrl+J
 - **ShortcutDelay**（可选）：快捷键按下后的延迟时间（单位：毫秒）
   - 默认值：100ms
   - 用于适配不同应用的响应速度
@@ -75,13 +74,16 @@ SendEnter=1      ; 是否发送回车 (1=是，0=否)
 ### ShortcutKey 快捷键配置说明
 
 不同 AI 应用可能使用不同的快捷键来新建对话：
+
 - **Ctrl+K**：大多数 AI 应用使用此快捷键（如豆包、Kimi 等）
 - **Ctrl+T**：部分应用使用（如 Qwen）
 - **Ctrl+N**：少数应用使用（如 Gemini）
+- **Ctrl+J**：部分应用使用（如Deepseek）
 
 ### ShortcutDelay 延迟配置说明
 
 延迟时间控制的是快捷键按下后到执行下一步操作之间的等待时间：
+
 - 如果设置太短：应用可能还没准备好接收输入，导致操作失败
 - 如果设置太长：操作会显得卡顿，影响用户体验
 - 建议根据实际应用响应速度进行调整：
@@ -100,8 +102,8 @@ Name=新对话，不发送
 Content=
 NewChat=1
 SendEnter=0
-```
 
+```
 ## 窗口信息获取功能
 
 ### 功能概述
@@ -126,7 +128,7 @@ Win+F11 快捷键可以获取当前活动窗口的详细信息，包括：
 ```ini
 [Config1]
 AppName=豆包  ; 窗口标题中包含的关键词
-ProcessName=msedge.exe  ; 精确的进程名
+ProcessName=chrome.exe  ; 精确的进程名
 ```
 
 ### 技术说明
@@ -281,10 +283,17 @@ SendEnter=0
 ## 文件说明
 
 - `Send to AI.ahk`: 主要的 AutoHotkey 脚本文件，支持多配置功能和自定义菜单
-- `Send to AI with debug.ahk`: 包含调试输出的脚本版本，用于问题排查
 - `Config.ini`: 配置文件，存储 AI 应用的配置信息和自定义菜单设置
-- `Config Manager.ahk`: 配置管理工具，提供图形界面管理配置
-- `README.md`: 本说明文件
+- `Resource/AI-Web-Script.user.js`: 浏览器配套脚本（Tampermonkey/油猴加载），统一增强 DeepSeek/Gemini/Grok/Qwen/ZAI/Doubao 的快捷键与界面
+
+## 浏览器配套脚本
+
+本项目的 `Resource/AI-Web-Script.user.js` 引用自独立开源仓库 [lawlietc/AI-Website-Script](https://github.com/lawlietc/AI-Website-Script)，源码地址：
+
+- 仓库：<https://github.com/lawlietc/AI-Website-Script>
+- 脚本原始地址：<https://github.com/lawlietc/AI-Website-Script/blob/main/AI-Web-Script.user.js>
+
+脚本在本仓库仅为同步副本，最新功能请以上游仓库为准。
 
 ## 版本历史
 
@@ -295,5 +304,5 @@ SendEnter=0
 - v2.1：添加 Win+F11 窗口信息获取功能，支持 ProcessName 字段精确识别应用，修复 AutoHotkey V2 语法问题
 - v2.2：新增 SelectApp 字段功能，允许为每个菜单项指定特定应用配置，无需频繁切换当前配置
 - v2.3：新增 ShortcutKey 和 ShortcutDelay 配置字段
-  - 支持为每个应用自定义快捷键（Ctrl+K/Ctrl+T/Ctrl+N）
+  - 支持为每个应用自定义快捷键（Ctrl+K/Ctrl+T/Ctrl+N/Ctrl+J）
   - 支持为每个应用自定义快捷键延迟时间，适配不同应用的响应速度
