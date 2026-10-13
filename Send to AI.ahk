@@ -90,6 +90,8 @@ GetShortcutKeyCombo(shortcutKey := "")
         return "^t"
     } else if (shortcutKey = "3") {
         return "^n"
+    } else if (shortcutKey = "4") {
+        return "^j"
     } else {
         ; 无效值返回默认值
         return "^k"
