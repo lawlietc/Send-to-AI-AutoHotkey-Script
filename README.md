@@ -2,6 +2,14 @@
 
 这是一个 AutoHotkey V2 脚本，支持多个 AI 应用配置，可以通过配置文件管理和切换不同的 AI 应用。
 
+## 下载与安装
+
+前往 [Releases 页面](https://github.com/lawlietc/Send-to-AI-AutoHotkey-Script/releases) 下载 **`Send-to-AI-vX.Y-windows-x64.zip`**（Windows x64），解压后进入文件夹直接运行 exe。
+
+压缩包已包含运行所需的全部文件：主程序 exe、默认 `Config.ini`、`使用说明.txt`、浏览器配套脚本 `AI-Web-Script.user.js`。
+
+> ⚠️ 请勿单独把 exe 拷出来运行——程序依赖同目录的 `Config.ini`，缺失会启动失败。
+
 ## 功能特点
 
 1. **多配置支持**：支持配置多个 AI 应用，如Deepseek、GPT、ZAI 等

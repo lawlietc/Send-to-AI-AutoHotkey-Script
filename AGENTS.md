@@ -34,5 +34,10 @@ gh api "repos/lawlietc/AI-Website-Script/contents/AI-Web-Script.user.js?ref=main
 
 ## 发布流程
 
+发布物为整合 zip（不再单独分发裸 exe），包名注明平台：`Send-to-AI-v<版本>-windows-x64.zip`。
+
 1. 编译新 exe 到 `Release/`（该目录不进 git）
-2. `gh release create v<版本> "Release/Send to AI v<版本>.exe" "Resource/AI-Web-Script.user.js" --title "Send to AI v<版本>" --notes "..."`
+2. 建暂存目录 `build_pkg/Send to AI v<版本>/`，放入：exe、`Config.ini`（默认配置）、`使用说明.txt`（UTF-8 BOM + CRLF）、`AI-Web-Script.user.js`
+3. 用 .NET `[IO.Compression.ZipFile]::CreateFromDirectory` 打包（勿用 Compress-Archive，中文文件名编码有问题），经 .ps1 文件调 PowerShell 执行
+4. `gh release create v<版本> "Release/Send-to-AI-v<版本>-windows-x64.zip" --title "Send to AI v<版本>" --notes-file <notes.md>`
+5. 发布说明中必须写明：下载 zip 解压整包运行，勿单独拷出 exe（依赖同目录 Config.ini）
